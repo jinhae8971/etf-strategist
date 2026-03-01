@@ -67,16 +67,21 @@ def _nearest_biz_date(target: date, look_back: int = 7) -> str:
     return target.strftime("%Y%m%d")
 
 
-def _safe_ohlcv(date_str: str, retries: int = 2) -> pd.DataFrame:
-    """pykrx get_etf_ohlcv_by_ticker 호출 (재시도 포함)"""
+def _safe_ohlcv(date_str: str, retries: int = 3) -> pd.DataFrame:
+    """pykrx get_etf_ohlcv_by_ticker 호출 (지수 백오프 재시도 포함)"""
     for attempt in range(retries + 1):
         try:
             df = krx.get_etf_ohlcv_by_ticker(date_str)
             if df is not None and not df.empty:
                 return df
+            logger.warning("[%s] 빈 데이터 반환 (attempt %d/%d)", date_str, attempt + 1, retries + 1)
         except Exception as e:
-            logger.warning(f"[{date_str}] attempt {attempt+1} failed: {e}")
-            time.sleep(1)
+            # 예외 메시지를 안전하게 변환 (%s 포맷 사용으로 TypeError 방지)
+            logger.warning("[%s] attempt %d/%d 실패: %s", date_str, attempt + 1, retries + 1, str(e)[:120])
+        wait_sec = 2 * (attempt + 1)  # 2, 4, 6, 8초 지수 백오프
+        if attempt < retries:
+            logger.info("  %d초 후 재시도...", wait_sec)
+            time.sleep(wait_sec)
     return pd.DataFrame()
 
 
