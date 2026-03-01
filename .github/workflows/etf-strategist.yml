@@ -1,21 +1,88 @@
-name: ETF Strategist Pipeline
+name: ETF 매매전략가 — 매일 09:00 KST
+
 on:
   schedule:
-    - cron: '0 9 * * 1-5'
-  workflow_dispatch:
+    - cron: '0 0 * * *'   # KST 09:00 = UTC 00:00
+  workflow_dispatch:        # 수동 테스트용
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
 
 jobs:
-  run-pipeline:
+  run-etf-strategy:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
+
     steps:
-      - uses: actions/checkout@v3
-      - name: Set up Python
-        uses: actions/setup-python@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
+          python-version: "3.11"
+          cache: "pip"
+
       - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-      - name: Run ETF Strategist Pipeline
+        run: pip install -r requirements.txt
+
+      - name: Run ETF pipeline
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          TELEGRAM_TOKEN:    ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID:  ${{ secrets.TELEGRAM_CHAT_ID }}
+          PAGES_URL:         https://jinhae8971.github.io/etf-strategist/
+          TZ:                Asia/Seoul
         run: python scripts/run_pipeline.py
+
+      - name: Commit & push report
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/data/
+          git diff --staged --quiet || git commit -m "📊 ETF 리포트 $(date +'%Y-%m-%d')"
+          git push
+
+      - name: Notify failure via Telegram
+        if: failure()
+        env:
+          TELEGRAM_TOKEN:   ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          python - <<'EOF'
+          import os, requests
+          requests.post(
+              f"https://api.telegram.org/bot{os.environ['TELEGRAM_TOKEN']}/sendMessage",
+              json={"chat_id": os.environ["TELEGRAM_CHAT_ID"],
+                    "text": "❌ ETF 매매전략가 실행 실패!\nhttps://github.com/jinhae8971/etf-strategist/actions"},
+              timeout=10)
+          EOF
+
+  # GitHub Pages 배포 (docs/ 폴더 소스)
+  deploy-pages:
+    needs: run-etf-strategy
+    runs-on: ubuntu-latest
+    if: success()
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs/
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
