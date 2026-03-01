@@ -188,7 +188,7 @@ def _collect_via_pykrx(today_str, d1_str, d7_str, d30_str, ytd_str) -> pd.DataFr
         today_str_fb = d1_str
         df_today = _safe_ohlcv(today_str_fb)
     if df_today.empty:
-        return None, None, None, None, None, None
+        return None  # pykrx 실패 → yfinance fallback 트리거
 
     df_d1  = _safe_ohlcv(d1_str)
     df_d7  = _safe_ohlcv(d7_str)
