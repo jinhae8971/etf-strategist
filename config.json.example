@@ -1,0 +1,11 @@
+{
+  "api_keys": {
+    "financial_data": "your_key_here"
+  },
+  "agents": {
+    "macro": {"enabled": true},
+    "trend": {"enabled": true},
+    "sector": {"enabled": true},
+    "risk": {"enabled": true}
+  }
+}
