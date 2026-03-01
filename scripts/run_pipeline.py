@@ -131,11 +131,37 @@ def main() -> dict:
 
     # ── 1) 데이터 수집 ────────────────────────────────────────────────────
     logger.info("━━━ Phase 0: ETF 데이터 수집 ━━━")
-    etf_data = collect_etf_data()
+    try:
+        etf_data = collect_etf_data()
+    except Exception as exc:
+        err_msg = str(exc)
+        logger.error("ETF 데이터 수집 실패: %s", err_msg)
+        # Telegram 오류 알림 후 graceful exit (워크플로우는 success로 종료)
+        if cfg["telegram_token"] and cfg["telegram_chat_id"]:
+            import requests as _req
+            try:
+                _req.post(
+                    f"https://api.telegram.org/bot{cfg['telegram_token']}/sendMessage",
+                    json={
+                        "chat_id": cfg["telegram_chat_id"],
+                        "text": (
+                            f"⚠️ <b>ETF 매매전략가 — 데이터 수집 실패</b> ({today_str})\n\n"
+                            f"KRX API 응답 없음 또는 오류:\n<code>{err_msg[:200]}</code>\n\n"
+                            f"이전 리포트 유지 중입니다."
+                        ),
+                        "parse_mode": "HTML",
+                    },
+                    timeout=15,
+                )
+            except Exception as te:
+                logger.warning("Telegram 알림도 실패: %s", te)
+        sys.exit(0)   # graceful exit → 워크플로우 success로 처리
+
     logger.info(
-        f"수집 완료: {etf_data['total_etf_count']}종목 / "
-        f"상승:{etf_data['market_overview']['advancing']} "
-        f"하락:{etf_data['market_overview']['declining']}"
+        "수집 완료: %d종목 / 상승:%d 하락:%d",
+        etf_data["total_etf_count"],
+        etf_data["market_overview"]["advancing"],
+        etf_data["market_overview"]["declining"],
     )
 
     # ── 2~3) 에이전트 토론 ────────────────────────────────────────────────
