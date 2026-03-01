@@ -1,12 +1,972 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ETF Strategist</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>📊 ETF 매매전략가</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:       #f8f9fc;
+    --surface:  #ffffff;
+    --surface2: #f3f4f8;
+    --border:   #e5e7ef;
+    --text:     #111827;
+    --muted:    #6b7280;
+    --green:    #10b981;
+    --red:      #ef4444;
+    --yellow:   #f59e0b;
+    --blue:     #3b82f6;
+    --purple:   #8b5cf6;
+    --accent:   #4f46e5;
+    --accent2:  #6366f1;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── 헤더 (온보딩 스타일) ── */
+  .top-nav {
+    background: #fff;
+    border-bottom: 1px solid var(--border);
+    padding: 0 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 64px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 1px 3px rgba(0,0,0,.06);
+  }
+  .nav-brand { display: flex; align-items: center; gap: 10px; }
+  .nav-logo {
+    width: 36px; height: 36px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+  }
+  .nav-title { font-size: 16px; font-weight: 700; color: var(--text); }
+  .nav-sub   { font-size: 12px; color: var(--muted); }
+  .nav-right { display: flex; align-items: center; gap: 10px; }
+  .nav-chip {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 5px 14px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--muted);
+  }
+  .nav-chip.accent { background: #eef2ff; border-color: #c7d2fe; color: var(--accent); font-weight: 600; }
+
+  /* ── 히어로 배너 (온보딩 스타일) ── */
+  .hero-section {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 40px 32px;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero-section::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  }
+  .hero-inner { max-width: 1340px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; }
+  .hero-left h2 { font-size: 28px; font-weight: 800; color: #fff; margin-bottom: 6px; }
+  .hero-left p  { font-size: 14px; color: rgba(255,255,255,.75); }
+  .hero-stats { display: flex; gap: 24px; flex-wrap: wrap; }
+  .hero-stat {
+    background: rgba(255,255,255,.15);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255,255,255,.25);
+    border-radius: 12px;
+    padding: 14px 20px;
+    text-align: center;
+    min-width: 100px;
+  }
+  .hero-stat .hs-val { font-size: 22px; font-weight: 800; color: #fff; }
+  .hero-stat .hs-lbl { font-size: 11px; color: rgba(255,255,255,.7); margin-top: 2px; }
+  .stance-pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 10px;
+  }
+  .stance-pill.집중 { background: rgba(16,185,129,.2); color: #6ee7b7; border: 1px solid rgba(16,185,129,.3); }
+  .stance-pill.유지 { background: rgba(245,158,11,.2); color: #fcd34d; border: 1px solid rgba(245,158,11,.3); }
+  .stance-pill.관망 { background: rgba(239,68,68,.2); color: #fca5a5; border: 1px solid rgba(239,68,68,.3); }
+
+  /* ── 레이아웃 ── */
+  .container { max-width: 1400px; margin: 0 auto; padding: 28px 32px; }
+  @media(max-width:768px){ .container{ padding:16px; } }
+
+  /* ── 섹션 타이틀 ── */
+  .section-header { margin-bottom: 16px; }
+  .section-header h3 { font-size: 16px; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 8px; }
+  .section-header p { font-size: 13px; color: var(--muted); margin-top: 3px; }
+
+  /* ── 카드 ── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 1px 4px rgba(0,0,0,.05);
+  }
+  .card-title {
+    font-size: 12px;
+    color: var(--muted);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .6px;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  /* ── 그리드 ── */
+  .grid-4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; margin: 20px 0; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 20px 0; }
+  .grid-3 { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin: 20px 0; }
+  @media(max-width:1100px){ .grid-4{ grid-template-columns:1fr 1fr; } }
+  @media(max-width:900px){ .grid-4,.grid-2,.grid-3{ grid-template-columns:1fr 1fr; } }
+  @media(max-width:600px){ .grid-4,.grid-2,.grid-3{ grid-template-columns:1fr; } }
+
+  /* ── KPI 카드 ── */
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 1px 4px rgba(0,0,0,.05);
+    position: relative;
+    overflow: hidden;
+  }
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    border-radius: 16px 16px 0 0;
+  }
+  .stat-card.blue::before  { background: linear-gradient(90deg, #3b82f6, #60a5fa); }
+  .stat-card.green::before { background: linear-gradient(90deg, #10b981, #34d399); }
+  .stat-card.red::before   { background: linear-gradient(90deg, #ef4444, #f87171); }
+  .stat-card.purple::before{ background: linear-gradient(90deg, #8b5cf6, #a78bfa); }
+  .stat-card .label { font-size: 12px; color: var(--muted); font-weight: 500; margin-bottom: 8px; }
+  .stat-card .value { font-size: 28px; font-weight: 800; letter-spacing: -1px; }
+  .stat-card .sub   { font-size: 12px; color: var(--muted); margin-top: 6px; }
+  .stat-card .icon-wrap {
+    position: absolute;
+    top: 16px; right: 16px;
+    width: 36px; height: 36px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+  }
+  .stat-card.blue  .icon-wrap { background: #eff6ff; }
+  .stat-card.green .icon-wrap { background: #ecfdf5; }
+  .stat-card.red   .icon-wrap { background: #fef2f2; }
+  .stat-card.purple.icon-wrap { background: #f5f3ff; }
+  .up   { color: var(--green); }
+  .down { color: var(--red); }
+  .neu  { color: var(--yellow); }
+
+  /* ── 버딕트 배너 ── */
+  #verdict-banner {
+    border-radius: 16px;
+    padding: 24px 28px;
+    margin: 20px 0;
+    display: flex;
+    gap: 24px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    border: 1.5px solid;
+    box-shadow: 0 4px 20px rgba(0,0,0,.06);
+  }
+  #verdict-banner.집중 { background: linear-gradient(135deg,#ecfdf5,#f0fdf4); border-color: #86efac; }
+  #verdict-banner.유지 { background: linear-gradient(135deg,#fffbeb,#fef9c3); border-color: #fde68a; }
+  #verdict-banner.관망 { background: linear-gradient(135deg,#fef2f2,#fff1f2); border-color: #fca5a5; }
+  #verdict-banner .stance-big { font-size: 44px; font-weight: 900; line-height: 1; }
+  #verdict-banner.집중 .stance-big { color: #059669; }
+  #verdict-banner.유지 .stance-big { color: #d97706; }
+  #verdict-banner.관망 .stance-big { color: #dc2626; }
+  #verdict-summary { max-width: 640px; color: #374151; font-size: 13.5px; line-height: 1.75; }
+
+  /* ── 탭 ── */
+  .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border); margin-bottom: 16px; }
+  .tab {
+    padding: 8px 18px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--muted);
+    border-bottom: 2px solid transparent;
+    transition: all .15s;
+    margin-bottom: -1px;
+  }
+  .tab:hover { color: var(--accent); }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; }
+
+  /* ── 히트맵 ── */
+  #heatmap-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+  .hm-cell {
+    border-radius: 12px;
+    padding: 12px 14px;
+    cursor: default;
+    transition: transform .15s, box-shadow .15s;
+    border: 1px solid transparent;
+  }
+  .hm-cell:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,.1); }
+  .hm-cell .sec-name { font-size: 12px; font-weight: 600; margin-bottom: 4px; color: #1f2937; }
+  .hm-cell .sec-ret  { font-size: 20px; font-weight: 800; }
+  .hm-cell .sec-vol  { font-size: 11px; opacity: .65; margin-top: 3px; color: #374151; }
+
+  /* ── 주도 섹터 ── */
+  .sector-rank-card {
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    padding: 16px;
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    background: var(--surface);
+    box-shadow: 0 1px 4px rgba(0,0,0,.04);
+    transition: box-shadow .15s;
+  }
+  .sector-rank-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,.08); }
+  .rank-num { font-size: 30px; font-weight: 900; min-width: 36px; }
+  .rank-num.gold   { color: #f59e0b; }
+  .rank-num.silver { color: #9ca3af; }
+  .rank-num.bronze { color: #d97706; }
+  .rank-sec-name { font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 5px; }
+  .rank-reason { font-size: 12px; color: var(--muted); line-height: 1.6; }
+  .rep-etfs { margin-top: 8px; display: flex; gap: 6px; flex-wrap: wrap; }
+  .etf-chip {
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 6px;
+    padding: 3px 9px;
+    font-size: 11px;
+    color: var(--blue);
+    font-weight: 500;
+  }
+
+  /* ── 에이전트 카드 ── */
+  .agent-card {
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    padding: 16px;
+    background: var(--surface);
+    box-shadow: 0 1px 4px rgba(0,0,0,.04);
+    transition: box-shadow .15s;
+  }
+  .agent-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,.08); }
+  .agent-header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+  .agent-avatar {
+    width: 44px; height: 44px;
+    border-radius: 12px;
+    background: #f3f4f8;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+  }
+  .agent-name { font-size: 14px; font-weight: 700; color: var(--text); }
+  .agent-role { font-size: 11px; color: var(--muted); margin-top: 1px; }
+  .agent-analysis { font-size: 13px; color: #4b5563; line-height: 1.7; margin-bottom: 10px; }
+  .kp-list { display: flex; flex-direction: column; gap: 5px; }
+  .kp-item {
+    font-size: 12px;
+    color: var(--muted);
+    padding-left: 14px;
+    position: relative;
+  }
+  .kp-item::before {
+    content: "•";
+    position: absolute;
+    left: 4px;
+    color: var(--accent);
+    font-weight: 700;
+  }
+
+  /* ── 배지 ── */
+  .badge { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+  .badge-green  { background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0; }
+  .badge-yellow { background: #fffbeb; color: #d97706; border: 1px solid #fde68a; }
+  .badge-red    { background: #fef2f2; color: #dc2626; border: 1px solid #fca5a5; }
+  .badge-blue   { background: #eff6ff; color: #2563eb; border: 1px solid #bfdbfe; }
+
+  /* ── 토론 크리티크 ── */
+  .critique-item {
+    background: #fafafa;
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 10px 10px 0;
+    padding: 12px 16px;
+    margin-bottom: 10px;
+  }
+  .critique-from { font-size: 11px; color: var(--muted); margin-bottom: 5px; font-weight: 600; }
+  .critique-text { font-size: 13px; line-height: 1.65; color: #374151; }
+
+  /* ── ETF 테이블 ── */
+  .table-controls {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .table-controls input, .table-controls select {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 8px;
+    padding: 7px 12px;
+    font-size: 13px;
+    font-family: inherit;
+    outline: none;
+    transition: border-color .15s;
+  }
+  .table-controls input:focus, .table-controls select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(79,70,229,.1);
+  }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th {
+    background: #f9fafb;
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .4px;
+    padding: 10px 12px;
+    text-align: right;
+    cursor: pointer;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  th:first-child, th:nth-child(2), th:nth-child(3) { text-align: left; }
+  th:hover { color: var(--accent); background: #f3f4f8; }
+  td {
+    padding: 9px 12px;
+    border-bottom: 1px solid #f3f4f8;
+    text-align: right;
+    color: #374151;
+  }
+  td:first-child, td:nth-child(2), td:nth-child(3) { text-align: left; }
+  tr:hover td { background: #fafbff; }
+  .ticker { font-family: 'SF Mono', monospace; color: var(--blue); font-size: 12px; font-weight: 600; }
+  .etf-name { max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; color: var(--text); }
+  .sec-tag {
+    display: inline-block;
+    background: #f3f4f6;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    padding: 2px 8px;
+    font-size: 11px;
+    color: var(--muted);
+    font-weight: 500;
+  }
+  .tv { color: var(--muted); font-size: 12px; }
+  #pager { display: flex; gap: 6px; align-items: center; justify-content: center; padding: 14px 0; flex-wrap: wrap; }
+  .page-btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    border-radius: 8px;
+    padding: 6px 13px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all .15s;
+    font-family: inherit;
+  }
+  .page-btn:hover { border-color: var(--accent); color: var(--accent); background: #eff6ff; }
+  .page-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 700; }
+
+  /* ── 컨피던스 바 ── */
+  .conf-bar { height: 5px; background: #e5e7eb; border-radius: 3px; margin-top: 8px; overflow: hidden; }
+  .conf-fill { height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--accent), var(--accent2)); }
+
+  /* ── 인사이트 / 리스크 ── */
+  .insight-list { display: flex; flex-direction: column; gap: 8px; }
+  .insight-item {
+    font-size: 13px;
+    padding: 10px 14px;
+    background: #f9fafb;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    line-height: 1.6;
+    color: #374151;
+    transition: box-shadow .15s;
+  }
+  .insight-item:hover { box-shadow: 0 2px 8px rgba(0,0,0,.06); }
+  .insight-item.risk   { border-left: 3px solid var(--red);   background: #fff5f5; }
+  .insight-item.action { border-left: 3px solid var(--green); background: #f0fdf4; }
+
+  /* ── 로딩 / 푸터 ── */
+  #loading {
+    text-align: center;
+    padding: 80px 20px;
+    color: var(--muted);
+    font-size: 15px;
+  }
+  #loading .spinner {
+    width: 44px; height: 44px;
+    border: 3px solid #e5e7eb;
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin .8s linear infinite;
+    margin: 0 auto 16px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  #app { display: none; }
+  footer {
+    text-align: center;
+    color: var(--muted);
+    font-size: 12px;
+    padding: 28px 0;
+    border-top: 1px solid var(--border);
+    margin-top: 32px;
+  }
+  footer a { color: var(--accent); text-decoration: none; }
+
+  /* ── 에이전트 투표 ── */
+  .vote-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .vote-item:last-child { border-bottom: none; }
+  .vote-avatar {
+    width: 40px; height: 40px;
+    border-radius: 10px;
+    background: #f3f4f8;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+</style>
 </head>
 <body>
-    <h1>ETF Strategist</h1>
-    <p>Multi-agent system for ETF investment strategy analysis</p>
+
+<!-- 상단 네비게이션 -->
+<nav class="top-nav">
+  <div class="nav-brand">
+    <div class="nav-logo">📈</div>
+    <div>
+      <div class="nav-title">ETF 매매전략가</div>
+      <div class="nav-sub">Multi-Agent AI Analysis</div>
+    </div>
+  </div>
+  <div class="nav-right">
+    <div class="nav-chip accent" id="hdr-date">--</div>
+    <div class="nav-chip" id="hdr-etf-count">-- 종목</div>
+    <div id="hdr-stance-badge"></div>
+  </div>
+</nav>
+
+<!-- 히어로 배너 -->
+<div class="hero-section">
+  <div class="hero-inner">
+    <div class="hero-left">
+      <div id="hero-stance-pill"></div>
+      <h2 id="hero-title">ETF 매매전략가</h2>
+      <p>트렌드·섹터·매크로·리스크 에이전트의 3-Phase 토론 기반 분석</p>
+    </div>
+    <div class="hero-stats" id="hero-stats"></div>
+  </div>
+</div>
+
+<div class="container">
+  <div id="loading">
+    <div class="spinner"></div>
+    데이터를 불러오는 중입니다...
+  </div>
+  <div id="app">
+    <!-- 구조 유지용 더미 헤더 (숨김) -->
+    <header style="display:none">
+      <div>
+        <div style="margin-top:6px; font-size:13px; color:var(--muted)">
+          국내 상장 ETF 전종목 섹터 분석 · <span id="hdr-date-legacy"></span> 기준
+        </div>
+      </div>
+    </header>
+
+    <!-- ── Verdict Banner ── -->
+    <div id="verdict-banner">
+      <div class="stance-big" id="vb-stance"></div>
+      <div style="flex:1">
+        <div style="font-size:13px;color:var(--muted);margin-bottom:4px">종합 스탠스 · 확신도 <span id="vb-conf"></span>%</div>
+        <div id="verdict-summary"></div>
+        <div id="vb-avoid" style="margin-top:8px;font-size:12px;color:var(--red)"></div>
+      </div>
+    </div>
+
+    <!-- ── Market Stat Cards ── -->
+    <div class="grid-4" id="stat-cards"></div>
+
+    <!-- ── Top Sectors ── -->
+    <div class="card" style="margin:16px 0">
+      <div class="card-title">🏆 주도섹터 TOP 3</div>
+      <div id="top-sectors-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px"></div>
+    </div>
+
+    <!-- ── Heatmap ── -->
+    <div class="card" style="margin:16px 0">
+      <div class="card-title">🌡️ 섹터 히트맵</div>
+      <div class="tabs" id="hm-tabs">
+        <div class="tab active" data-period="ret_1d">1일</div>
+        <div class="tab" data-period="ret_1w">1주</div>
+        <div class="tab" data-period="ret_1m">1개월</div>
+        <div class="tab" data-period="ret_ytd">YTD</div>
+      </div>
+      <div id="heatmap-grid"></div>
+    </div>
+
+    <!-- ── Insights + Agents ── -->
+    <div class="grid-2">
+      <!-- Key Insights -->
+      <div class="card">
+        <div class="card-title">💡 핵심 인사이트</div>
+        <div id="insights-list" class="insight-list"></div>
+        <div class="card-title" style="margin-top:16px">⚠️ 리스크 요인</div>
+        <div id="risk-list" class="insight-list"></div>
+        <div class="card-title" style="margin-top:16px">✅ 액션 아이템</div>
+        <div id="action-list" class="insight-list"></div>
+      </div>
+      <!-- Agent Votes -->
+      <div class="card">
+        <div class="card-title">🗳️ 에이전트 의견</div>
+        <div id="agent-votes"></div>
+      </div>
+    </div>
+
+    <!-- ── Agent Analysis Detail ── -->
+    <div class="card" style="margin:16px 0">
+      <div class="card-title">🤖 에이전트 분석 상세</div>
+      <div id="agent-cards" style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px"></div>
+    </div>
+
+    <!-- ── Debate ── -->
+    <div class="card" style="margin:16px 0">
+      <div class="card-title">⚔️ 교차 반론</div>
+      <div id="debate-list"></div>
+    </div>
+
+    <!-- ── ETF Table ── -->
+    <div class="card" style="margin:16px 0">
+      <div class="card-title">📋 ETF 전체 리스트</div>
+      <div class="table-controls">
+        <input type="text" id="search-input" placeholder="종목명 / 티커 검색" style="width:200px">
+        <select id="sector-filter"><option value="">전체 섹터</option></select>
+        <select id="sort-col">
+          <option value="ret_1d">1일 등락률</option>
+          <option value="ret_1w">1주 등락률</option>
+          <option value="ret_1m">1개월 등락률</option>
+          <option value="ret_ytd">YTD 등락률</option>
+          <option value="trading_value">거래대금</option>
+        </select>
+        <select id="sort-dir"><option value="desc">내림차순</option><option value="asc">오름차순</option></select>
+        <span id="table-count" style="color:var(--muted);font-size:12px"></span>
+      </div>
+      <div style="overflow-x:auto">
+        <table>
+          <thead>
+            <tr>
+              <th>티커</th>
+              <th>ETF명</th>
+              <th>섹터</th>
+              <th data-sort="ret_1d">1일 ▾</th>
+              <th data-sort="ret_1w">1주</th>
+              <th data-sort="ret_1m">1개월</th>
+              <th data-sort="ret_ytd">YTD</th>
+              <th data-sort="trading_value">거래대금</th>
+            </tr>
+          </thead>
+          <tbody id="etf-tbody"></tbody>
+        </table>
+      </div>
+      <div id="pager"></div>
+    </div>
+
+    <footer>
+      <div style="font-weight:600;color:#374151;margin-bottom:6px">ETF 매매전략가</div>
+      <div>매일 09:00 KST 자동 업데이트 · 본 분석은 투자 참고용 정보이며 투자 손익에 대한 책임은 투자자 본인에게 있습니다.</div>
+      <div style="margin-top:6px">데이터: KRX (한국거래소) via pykrx / yfinance &nbsp;·&nbsp; AI 분석: <a href="https://claude.ai" target="_blank">Claude API</a> (Anthropic)</div>
+    </footer>
+  </div><!-- #app -->
+</div><!-- .container -->
+
+<script>
+// ────────────────────────────────────────────────────────────────────────────
+// 전역 상태
+// ────────────────────────────────────────────────────────────────────────────
+let ALL_ETFS = [];
+let FILTERED = [];
+let PAGE     = 1;
+const PER_PAGE = 50;
+let SORT_COL = 'ret_1d';
+let SORT_DIR = 'desc';
+let HM_PERIOD = 'ret_1d';
+
+// ────────────────────────────────────────────────────────────────────────────
+// 유틸
+// ────────────────────────────────────────────────────────────────────────────
+const fmt = (v, digits=2) =>
+  v == null ? '—' : (v >= 0 ? `+${v.toFixed(digits)}` : v.toFixed(digits)) + '%';
+
+const fmtTV = (v) => {
+  if (v == null) return '—';
+  if (v >= 1e12) return (v/1e12).toFixed(1) + '조';
+  if (v >= 1e8)  return (v/1e8).toFixed(0)  + '억';
+  if (v >= 1e4)  return (v/1e4).toFixed(0)  + '만';
+  return v.toLocaleString();
+};
+
+const retClass = (v) => v == null ? '' : v > 0 ? 'up' : v < 0 ? 'down' : 'neu';
+
+// 등락률 → 히트맵 배경색 (라이트 테마)
+function heatColor(v) {
+  if (v == null) return '#f3f4f6';
+  const abs = Math.min(Math.abs(v), 5);
+  const a   = 0.08 + (abs / 5) * 0.55;
+  return v > 0
+    ? `rgba(16,185,129,${a.toFixed(2)})`
+    : `rgba(239,68,68,${a.toFixed(2)})`;
+}
+function heatTextColor(v) {
+  if (v == null) return '#6b7280';
+  return v > 0 ? '#065f46' : '#991b1b';
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// 렌더 함수들
+// ────────────────────────────────────────────────────────────────────────────
+function renderHeader(report) {
+  const v = report.verdict;
+  document.getElementById('hdr-date').textContent = '📅 ' + report.date;
+  document.getElementById('hdr-etf-count').textContent = report.etf_data.total_etf_count.toLocaleString() + ' 종목';
+
+  const stanceLabel = {'집중':'집중 매매','유지':'유지 관망','관망':'관망 대기'}[v.final_stance] || v.final_stance;
+  const stanceClass = {'집중':'badge-green','유지':'badge-yellow','관망':'badge-red'}[v.final_stance] || '';
+  document.getElementById('hdr-stance-badge').innerHTML =
+    `<span class="badge ${stanceClass}">${stanceLabel}</span>`;
+
+  // 히어로 스탠스 필 업데이트
+  const heroStance = document.getElementById('hero-stance-pill');
+  if (heroStance) {
+    heroStance.innerHTML = `<span class="stance-pill ${v.final_stance}">AI 스탠스: ${v.final_stance} · 확신도 ${v.confidence_score}%</span>`;
+  }
+  const heroTitle = document.getElementById('hero-title');
+  if (heroTitle) heroTitle.textContent = report.date + ' ETF 시장 분석';
+}
+
+function renderVerdictBanner(verdict) {
+  const banner = document.getElementById('verdict-banner');
+  banner.className = verdict.final_stance || '유지';
+  document.getElementById('vb-stance').textContent = verdict.final_stance || '—';
+  document.getElementById('vb-conf').textContent   = verdict.confidence_score || 0;
+  document.getElementById('verdict-summary').textContent = verdict.summary || '';
+
+  const avoidSecs = (verdict.avoid_sectors || []).join(' · ');
+  if (avoidSecs) {
+    document.getElementById('vb-avoid').textContent = '⛔ 회피 섹터: ' + avoidSecs;
+  }
+}
+
+function renderStatCards(etf_data) {
+  const mo = etf_data.market_overview || {};
+  const total = etf_data.total_etf_count || 0;
+  const cards = [
+    { label: '분석 종목 수', value: total.toLocaleString(), sub: '국내 상장 ETF', cls: 'blue', icon: '📊' },
+    { label: '상승 종목', value: mo.advancing || 0, sub: `하락 ${mo.declining||0} · 보합 ${mo.unchanged||0}`, cls: 'green', icon: '📈' },
+    { label: '1일 평균 수익률', value: fmt(mo.avg_ret_1d), sub: '전체 ETF 평균', cls: (mo.avg_ret_1d||0) >= 0 ? 'green' : 'red', icon: '📉' },
+    { label: '총 거래대금', value: fmtTV(mo.total_trading_value), sub: '오늘 합산 거래대금', cls: 'purple', icon: '💰' },
+  ];
+  document.getElementById('stat-cards').innerHTML = cards.map(c =>
+    `<div class="stat-card ${c.cls}">
+       <div class="icon-wrap">${c.icon}</div>
+       <div class="label">${c.label}</div>
+       <div class="value ${retClass(c.value)}">${c.value}</div>
+       <div class="sub">${c.sub}</div>
+     </div>`
+  ).join('');
+
+  // 히어로 stats 업데이트
+  const heroStats = document.getElementById('hero-stats');
+  if (heroStats) {
+    heroStats.innerHTML = [
+      { v: total, l: '분석 종목' },
+      { v: mo.advancing||0, l: '상승' },
+      { v: fmtTV(mo.total_trading_value), l: '거래대금' },
+      { v: fmt(mo.avg_ret_1d), l: '평균 수익률' },
+    ].map(s => `<div class="hero-stat"><div class="hs-val">${s.v}</div><div class="hs-lbl">${s.l}</div></div>`).join('');
+  }
+}
+
+function renderTopSectors(verdict) {
+  const ranks = ['gold','silver','bronze'];
+  const html  = (verdict.top_sectors || []).slice(0,3).map((s,i) => {
+    const reps = (s.representative_etfs || []).map(t => `<span class="etf-chip">${t}</span>`).join('');
+    return `<div class="sector-rank-card">
+      <div class="rank-num ${ranks[i]}">${s.rank}</div>
+      <div>
+        <div class="rank-sec-name">${s.sector}</div>
+        <div class="rank-reason">${s.reason || ''}</div>
+        <div class="rep-etfs">${reps}</div>
+      </div>
+    </div>`;
+  }).join('');
+  document.getElementById('top-sectors-grid').innerHTML = html || '<div style="color:var(--muted)">데이터 없음</div>';
+}
+
+function renderHeatmap(sector_summary, sector_ranking, period) {
+  const grid = document.getElementById('heatmap-grid');
+  const periodKey = {
+    'ret_1d': 'avg_ret_1d', 'ret_1w': 'avg_ret_1w',
+    'ret_1m': 'avg_ret_1m', 'ret_ytd': 'avg_ret_ytd'
+  }[period] || 'avg_ret_1d';
+
+  // 섹터를 현재 기간 기준으로 정렬
+  const sectors = Object.keys(sector_summary).sort((a, b) => {
+    const va = sector_summary[a][periodKey] || 0;
+    const vb = sector_summary[b][periodKey] || 0;
+    return vb - va;
+  });
+
+  grid.innerHTML = sectors.map(sec => {
+    const info = sector_summary[sec];
+    const val  = info[periodKey];
+    const bg   = heatColor(val);
+    const tc   = heatTextColor(val);
+    return `<div class="hm-cell" style="background:${bg};border-color:${val==null?'#e5e7eb':val>0?'rgba(16,185,129,.25)':'rgba(239,68,68,.25)'}">
+      <div class="sec-name">${sec}</div>
+      <div class="sec-ret" style="color:${tc}">${fmt(val)}</div>
+      <div class="sec-vol">${fmtTV(info.total_trading_value)}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderInsights(verdict) {
+  const insEl    = document.getElementById('insights-list');
+  const riskEl   = document.getElementById('risk-list');
+  const actionEl = document.getElementById('action-list');
+
+  insEl.innerHTML = (verdict.key_insights || []).map(i =>
+    `<div class="insight-item">${i}</div>`).join('');
+  riskEl.innerHTML = (verdict.risk_factors || []).map(r =>
+    `<div class="insight-item risk">⚠️ ${r}</div>`).join('');
+  actionEl.innerHTML = (verdict.action_items || []).map(a =>
+    `<div class="insight-item action">✅ ${a}</div>`).join('');
+}
+
+function renderAgentVotes(verdict, reports) {
+  const stanceBadge = {
+    '집중': 'badge-green',
+    '유지': 'badge-yellow',
+    '관망': 'badge-red'
+  };
+
+  const html = reports.map(r => {
+    const cls  = stanceBadge[r.stance] || 'badge-blue';
+    const conf = r.confidence_score;
+    return `<div class="vote-item">
+      <div class="vote-avatar">${r.avatar}</div>
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:600;margin-bottom:4px">${r.agent_name}</div>
+        <div class="conf-bar"><div class="conf-fill" style="width:${conf}%"></div></div>
+      </div>
+      <div style="text-align:right">
+        <span class="badge ${cls}">${r.stance}</span>
+        <div style="font-size:12px;color:var(--muted);margin-top:4px">${conf}%</div>
+      </div>
+    </div>`;
+  }).join('');
+  document.getElementById('agent-votes').innerHTML = html;
+}
+
+function renderAgentCards(reports) {
+  const html = reports.map(r => {
+    const kps = (r.key_points || []).map(k => `<div class="kp-item">${k}</div>`).join('');
+    const stanceColor = {'집중':'var(--green)','유지':'var(--yellow)','관망':'var(--red)'}[r.stance] || 'var(--muted)';
+    return `<div class="agent-card">
+      <div class="agent-header">
+        <span class="agent-avatar">${r.avatar}</span>
+        <div>
+          <div class="agent-name">${r.agent_name}</div>
+          <div class="agent-role">${r.role}</div>
+        </div>
+        <span class="badge" style="margin-left:auto;background:rgba(88,166,255,.12);color:${stanceColor}">${r.stance}</span>
+      </div>
+      <div class="agent-analysis">${(r.analysis || '').substring(0,300)}</div>
+      <div class="kp-list">${kps}</div>
+    </div>`;
+  }).join('');
+  document.getElementById('agent-cards').innerHTML = html;
+}
+
+function renderDebate(critiques) {
+  const html = (critiques || []).map(c =>
+    `<div class="critique-item">
+       <div class="critique-from">⚔️ <b>${c.from_agent}</b> → ${c.to_agent}</div>
+       <div class="critique-text">${c.critique}</div>
+     </div>`
+  ).join('');
+  document.getElementById('debate-list').innerHTML = html || '<div style="color:var(--muted)">반론 데이터 없음</div>';
+}
+
+// ── ETF Table ────────────────────────────────────────────────────────────────
+function populateSectorFilter(etfs) {
+  const sectors = [...new Set(etfs.map(e => e.sector))].sort();
+  const sel = document.getElementById('sector-filter');
+  sectors.forEach(s => {
+    const opt = document.createElement('option');
+    opt.value = s; opt.textContent = s;
+    sel.appendChild(opt);
+  });
+}
+
+function applyFiltersAndRender() {
+  const q   = document.getElementById('search-input').value.trim().toLowerCase();
+  const sec = document.getElementById('sector-filter').value;
+
+  FILTERED = ALL_ETFS.filter(e => {
+    const matchQ   = !q   || e.name.toLowerCase().includes(q) || e.ticker.includes(q.toUpperCase());
+    const matchSec = !sec || e.sector === sec;
+    return matchQ && matchSec;
+  });
+
+  FILTERED.sort((a, b) => {
+    const va = a[SORT_COL] ?? (SORT_DIR === 'desc' ? -Infinity : Infinity);
+    const vb = b[SORT_COL] ?? (SORT_DIR === 'desc' ? -Infinity : Infinity);
+    return SORT_DIR === 'desc' ? vb - va : va - vb;
+  });
+
+  PAGE = 1;
+  document.getElementById('table-count').textContent = `${FILTERED.length.toLocaleString()}종목`;
+  renderTable();
+  renderPager();
+}
+
+function renderTable() {
+  const start  = (PAGE - 1) * PER_PAGE;
+  const slice  = FILTERED.slice(start, start + PER_PAGE);
+  const tbody  = document.getElementById('etf-tbody');
+
+  tbody.innerHTML = slice.map(e => `
+    <tr>
+      <td class="ticker">${e.ticker}</td>
+      <td class="etf-name" title="${e.name}">${e.name}</td>
+      <td><span class="sec-tag">${e.sector}</span></td>
+      <td class="${retClass(e.ret_1d)}">${fmt(e.ret_1d)}</td>
+      <td class="${retClass(e.ret_1w)}">${fmt(e.ret_1w)}</td>
+      <td class="${retClass(e.ret_1m)}">${fmt(e.ret_1m)}</td>
+      <td class="${retClass(e.ret_ytd)}">${fmt(e.ret_ytd)}</td>
+      <td class="tv">${fmtTV(e.trading_value)}</td>
+    </tr>`).join('');
+}
+
+function renderPager() {
+  const total = Math.ceil(FILTERED.length / PER_PAGE);
+  if (total <= 1) { document.getElementById('pager').innerHTML = ''; return; }
+  const pages = [];
+  for (let i = 1; i <= total; i++) pages.push(i);
+  document.getElementById('pager').innerHTML = pages.map(p =>
+    `<button class="page-btn${p===PAGE?' active':''}" data-p="${p}">${p}</button>`
+  ).join('');
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// 이벤트 바인딩
+// ────────────────────────────────────────────────────────────────────────────
+function bindEvents(report) {
+  // 히트맵 탭
+  document.getElementById('hm-tabs').querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('#hm-tabs .tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      HM_PERIOD = tab.dataset.period;
+      renderHeatmap(report.etf_data.sector_summary, report.etf_data.sector_ranking_1d, HM_PERIOD);
+    });
+  });
+
+  // 테이블 필터
+  document.getElementById('search-input').addEventListener('input', applyFiltersAndRender);
+  document.getElementById('sector-filter').addEventListener('change', applyFiltersAndRender);
+  document.getElementById('sort-col').addEventListener('change', e => { SORT_COL = e.target.value; applyFiltersAndRender(); });
+  document.getElementById('sort-dir').addEventListener('change', e => { SORT_DIR = e.target.value; applyFiltersAndRender(); });
+
+  // 테이블 헤더 정렬
+  document.querySelectorAll('th[data-sort]').forEach(th => {
+    th.addEventListener('click', () => {
+      SORT_COL = th.dataset.sort;
+      SORT_DIR = SORT_DIR === 'desc' ? 'asc' : 'desc';
+      document.getElementById('sort-col').value = SORT_COL;
+      document.getElementById('sort-dir').value = SORT_DIR;
+      applyFiltersAndRender();
+    });
+  });
+
+  // 페이저
+  document.getElementById('pager').addEventListener('click', e => {
+    if (e.target.dataset.p) { PAGE = +e.target.dataset.p; renderTable(); renderPager(); }
+  });
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// 메인 로드
+// ────────────────────────────────────────────────────────────────────────────
+async function loadReport() {
+  try {
+    const resp = await fetch('./data/daily_report.json?t=' + Date.now());
+    if (!resp.ok) throw new Error('리포트 파일 없음');
+    const report = await resp.json();
+    const { verdict, etf_data, debate } = report;
+
+    renderHeader(report);
+    renderVerdictBanner(verdict);
+    renderStatCards(etf_data);
+    renderTopSectors(verdict);
+    renderHeatmap(etf_data.sector_summary, etf_data.sector_ranking_1d, 'ret_1d');
+    renderInsights(verdict);
+    renderAgentVotes(verdict, debate.phase1_reports);
+    renderAgentCards(debate.phase1_reports);
+    renderDebate(debate.phase2_critiques);
+
+    ALL_ETFS = etf_data.etf_list || [];
+    populateSectorFilter(ALL_ETFS);
+    applyFiltersAndRender();
+
+    bindEvents(report);
+
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('app').style.display     = 'block';
+  } catch (err) {
+    document.getElementById('loading').innerHTML =
+      `<div style="color:var(--red)">❌ 데이터 로드 실패: ${err.message}</div>
+       <div style="color:var(--muted);margin-top:8px;font-size:13px">
+         GitHub Actions가 아직 실행되지 않았을 수 있습니다.<br>
+         Actions 탭에서 워크플로우를 수동으로 트리거해주세요.
+       </div>`;
+  }
+}
+
+loadReport();
+</script>
 </body>
 </html>
